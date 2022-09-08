@@ -1,0 +1,8 @@
+---
+  - name: Install ZAP Scanner
+    gather_facts: True
+    hosts: all
+
+    roles:
+      - role: /home/vagrant/on-prem-lab/provisioning/roles/ansible-role-zap
+        become: yes

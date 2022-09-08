@@ -1,0 +1,28 @@
+- name: check if ZAP Check is Installed
+  stat: 
+    path: "{{ install_root }}/zap_install.sh"
+  register: zap_check_installed
+
+- name: Create OWASP ZAP installation script
+  template: 
+    src: zap_install.sh 
+    dest: "{{ install_root }}/zap_install.sh"
+    owner: root
+    group: root
+    mode: a+r
+  when: zap_check_installed.stat.exists == false
+  become: yes
+
+- name: Make the zap_install script executable
+  raw: cd {{ install_root }}; chmod +x zap_install.sh
+  when: zap_check_installed.stat.exists == false
+  become: yes
+
+- name: Install OWASP ZAP 
+  shell: "bash {{ install_root }}/zap_install.sh"
+  when: zap_check_installed.stat.exists == false
+  become: yes
+  notify: 
+    - systemd_reload
+    - systemd_start
+    - restart nginx

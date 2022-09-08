@@ -1,0 +1,13 @@
+---
+- name: Installs a Kibana Server
+  gather_facts: True
+  hosts: all
+  # To run locally
+  
+  roles:
+  - role: /home/vagrant/on-prem-lab/provisioning/roles/elk-kibana
+    vars:
+      kibana_server: 0.0.0.0
+      kibana_server_port: 5601
+      elasticsearch_server: "http://127.0.0.1:9200"
+    become: yes   

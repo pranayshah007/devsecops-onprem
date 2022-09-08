@@ -1,0 +1,11 @@
+##
+# Run db migrations and get all static files
+##
+
+- name: Make migrations
+  shell: ". {{ install_root }}/envs/bin/activate && {{venv_python}} {{ app_dir }}/manage.py makemigrations "
+  become: yes
+
+- name: Migrate database
+  shell: ". {{ install_root }}/envs/bin/activate && {{venv_python}} {{ app_dir }}/manage.py migrate "
+  become: yes

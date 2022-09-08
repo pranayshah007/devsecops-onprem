@@ -1,0 +1,23 @@
+- name: restart nginx
+  service: name=nginx state=restarted enabled=yes
+  become: yes
+  
+- name: Reload systemd
+  command: systemctl daemon-reload
+  listen: systemd_reload
+  become: yes 
+
+- name: Reload zap systemd
+  command: systemctl start zap.service
+  listen: systemd_start
+  become: yes 
+
+- name: Enable zap systemd
+  command: systemctl enable zap
+  listen: systemd_enable
+  become: yes 
+
+- name: restart zap systemd
+  command: systemctl restart zap
+  listen: systemd_restart
+  become: yes 

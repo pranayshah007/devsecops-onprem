@@ -1,0 +1,21 @@
+- name: check if Inspec is Installed
+  stat: 
+    path: /usr/bin/inspec
+  register: inspec_installed
+
+- name: Install Inspec .deb package.
+  apt:
+    deb: https://packages.chef.io/files/stable/inspec/{{inspec_version}}/ubuntu/18.04/inspec_{{inspec_version}}-1_amd64.deb
+  become: yes
+  when: inspec_installed.stat.exists == false
+  register: download
+  until: download is success
+  retries: 5
+  delay: 2  
+
+- name: Accept Inspec License
+  shell: 'inspec exec' 
+  environment:
+    CHEF_LICENSE: "accept"
+  args:
+    executable: /bin/bash

@@ -1,0 +1,48 @@
+---
+- name: Install Docker for Creating a Staging Environment
+  gather_facts: True
+  hosts: all
+
+  vars:
+    docker_insecure_registry_domain: "localhost:6000"
+
+  tasks:
+
+  - name: Create a directory for storing log mounts from docker
+    file:
+      state: directory
+      path: "{{ item }}"
+      mode: "0777"
+    loop:
+      - /home/vagrant/logs
+      - /home/vagrant/mysql
+
+  # In order to push docker images to insecure registry special configuration is required.
+  # https://docs.docker.com/registry/insecure/
+  - name: Configure Jenkins to Access insecure docker registry
+    template:
+      src: daemon.json
+      dest: "/etc/docker/daemon.json"
+      mode: 0777
+    register: docker_insecure_registry_access
+    when:
+      - docker_insecure_registry_domain | length > 0
+    become: yes
+
+  - name: Immediately restart Docker for accessing insecure registry.
+    service: name=docker state=restarted
+    when: >
+      (docker_insecure_registry_access is defined and docker_insecure_registry_access.changed)
+    become: yes
+
+  # roles:
+  #   - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.docker
+  #     become: yes
+  #     vars:
+  #       docker_users: [vagrant]
+  #       docker_install_compose: false
+  #   - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.pip
+  #     become: yes
+  #     vars: 
+  #       pip_install_packages:
+  #       - name: docker-py       

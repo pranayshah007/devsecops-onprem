@@ -1,0 +1,12 @@
+#!/bin/sh
+
+[Unit]
+Description=zap Web App
+After=network.target
+
+[Service]
+ExecStart=/zap/run.sh
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target

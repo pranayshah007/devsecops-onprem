@@ -1,0 +1,15 @@
+---
+- name: Install Docker Registry
+  hosts: all #localhost
+  #connection: local
+  become: yes
+#https://github.com/freedomofpress/ansible-role-docker-registry
+
+  vars:
+    docker_insecure_registry_domain: "localhost:6000"
+
+  tasks:
+    - name: run docker registry
+      command: docker run -d -p 6000:5000 --restart=always --name registry registry:2
+      become: yes
+      ignore_errors: true

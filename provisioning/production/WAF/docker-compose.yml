@@ -1,0 +1,16 @@
+version: '3'
+services:
+  nginx:
+      build: nginx
+      command:
+        - /bin/sh
+        - -c
+        - |
+          nginx -g "daemon off;"
+      container_name: production_nginx
+      volumes:
+        - ./logs:/var/log/nginx      
+      ports:
+        - "8070:80"
+      extra_hosts:
+        - "prodapp:$BHOST"

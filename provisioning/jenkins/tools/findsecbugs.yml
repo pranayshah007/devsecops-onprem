@@ -1,0 +1,53 @@
+- name: check if FindSecBugs is Installed
+  stat: 
+    path: /usr/local/bin/findsecbugs
+  register: findsecbugs_installed
+
+- name: Download FindSecBugs Shell Script
+  get_url:
+    url: https://github.com/find-sec-bugs/find-sec-bugs/releases/download/version-{{findsecbugs_version}}/findsecbugs-cli-{{findsecbugs_version}}.zip
+    dest: /tmp/
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+  when: findsecbugs_installed.stat.exists == false
+  register: download
+  until: download is success
+  retries: 5
+  delay: 2  
+
+- name: Create a directory for findsecbugs
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: "0777"
+  loop:
+    - /opt/findsecbugs-cli
+  become: yes
+  when: findsecbugs_installed.stat.exists == false  
+
+- name: Extract Zip file To opt
+  unarchive:
+    src: /tmp/findsecbugs-cli-{{findsecbugs_version}}.zip
+    dest: /opt/findsecbugs-cli
+  become: yes
+  when: findsecbugs_installed.stat.exists == false
+
+- name: Create a symbolic link for FindSecBugs Script
+  file:
+    src: /opt/findsecbugs-cli/findsecbugs.sh
+    dest: /usr/local/bin/findsecbugs
+    mode: '0755'
+    state: link
+  become: yes
+  when: findsecbugs_installed.stat.exists == false  
+
+- name: Recursively Apply Permissions for Jenkins user in the jenkins home folder
+  file:
+    path: /opt/findsecbugs/
+    state: directory
+    mode: '0777'
+    recurse: yes
+  become: yes
+  when: findsecbugs_installed.stat.exists == false  

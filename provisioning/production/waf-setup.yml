@@ -1,0 +1,4 @@
+- name: run docker-compose for waf setup 
+  command: docker-compose -f /home/vagrant/on-prem-lab/provisioning/production/WAF/docker-compose.yml build
+  become: yes
+  ignore_errors: true

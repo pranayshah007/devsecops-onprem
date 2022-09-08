@@ -1,0 +1,19 @@
+- name: Recursively Apply Permissions for Jenkins user in the scripts home folder
+  file:
+    path: /vagrant/scripts/
+    state: directory
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"    
+    recurse: yes
+  failed_when: false
+  become: yes
+
+- name: Recursively Apply Permissions for Jenkins user in the scripts home folder
+  file:
+    path: /zap
+    state: directory
+    mode: '0777'
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"    
+    recurse: yes
+  become: yes 

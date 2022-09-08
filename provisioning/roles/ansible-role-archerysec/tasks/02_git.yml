@@ -1,0 +1,28 @@
+##
+# Clone and pull the repo
+##
+
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "../vars/vars.yml"
+
+- name: create archerysec directory
+  file:
+    path: /home/archerysec
+    state: directory
+
+- name: create archerysec directory
+  file:
+    path: /home/archerysec/app
+    state: directory
+
+- name: Unarchive ArcherySec file that needs to be downloaded
+  unarchive:
+    src: https://github.com/archerysec/archerysec/archive/v{{archerysec_version}}.tar.gz
+    dest: "/home/"
+    remote_src: yes
+
+- name: copy files and directory
+  synchronize:
+    src: "/home/archerysec-{{archerysec_version}}/"
+    dest: "{{ install_root }}"

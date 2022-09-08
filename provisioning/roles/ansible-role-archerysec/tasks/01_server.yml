@@ -1,0 +1,5 @@
+##
+# Update the DNF package cache and install packages as a root user
+##
+- name: Install system packages
+  apt: pkg='{{ system_packages }}' update-cache=yes

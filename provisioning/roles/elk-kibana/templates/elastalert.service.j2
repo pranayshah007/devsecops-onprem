@@ -1,0 +1,16 @@
+[Unit]
+Description=Elastalert
+
+[Service]
+Type=simple
+User=kibana
+Group=kibana
+ExecStart=/opt/elastalert/envs/bin/python3.6 -m elastalert.elastalert --config /opt/elastalert/elastalert.conf --verbose --rule /opt/elastalert/example_frequency.yaml
+Restart=on-failure
+RestartSec=3
+StartLimitBurst=3
+StartLimitInterval=60
+WorkingDirectory=/
+
+[Install]
+WantedBy=multi-user.target

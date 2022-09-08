@@ -1,0 +1,14 @@
+---
+- import_playbook: jenkins/playbook.yml
+- import_playbook: elastic/playbook.yml
+- import_playbook: mail/playbook.yml
+- import_playbook: archerysec/playbook.yml
+- import_playbook: archiver/playbook.yml
+- import_playbook: kibana/playbook.yml
+- import_playbook: logstash/playbook.yml
+- import_playbook: production/playbook.yml
+- import_playbook: registry/playbook.yml
+- import_playbook: zap-scanner/playbook.yml
+- import_playbook: ide/playbook.yml
+- import_playbook: nginx/playbook.yml
+- import_playbook: vault/playbook.yml

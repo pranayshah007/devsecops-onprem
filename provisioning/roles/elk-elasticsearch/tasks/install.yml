@@ -1,0 +1,60 @@
+- name: check if configuration directory
+  stat:
+    path: "/etc/systemd/system/elasticsearch.service.d"
+  register: elasticsearch_check_configuration_directory
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  when: elasticsearch_check_configuration_directory.stat.exists == false  
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+  become: yes
+  when: elasticsearch_check_configuration_directory.stat.exists == false  
+
+- name: Install pre-requisites
+  package:
+    name: apt-transport-https
+    update_cache: yes
+    state: present
+  when: elasticsearch_check_configuration_directory.stat.exists == false  
+
+- name: Install elasticsearch
+  package:
+    name: elasticsearch
+    update_cache: yes
+    state: present
+  register: get_result
+  until: get_result is success
+  retries: 3
+  delay: 2
+  when: elasticsearch_check_configuration_directory.stat.exists == false  
+
+- name: Elasticsearch create service drop-in configuration directory.
+  command: mkdir /etc/systemd/system/elasticsearch.service.d
+  when: elasticsearch_check_configuration_directory.stat.exists == false
+  become: yes
+
+- name: Define TimeoutStartSec option to increase startup timeout.
+  template:
+    src: startup-timeout.conf.j2
+    dest: "/etc/systemd/system/elasticsearch.service.d/startup-timeout.conf"
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+  notify: Reload systemd
+  
+- name: Copy the config file
+  template:
+    src: elasticsearch.yml.j2
+    dest: "/etc/elasticsearch/elasticsearch.yml"
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+  notify: Restart Elasticsearch

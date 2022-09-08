@@ -1,0 +1,61 @@
+- name: check if Dependency Check is Installed
+  stat: 
+    path: /usr/local/bin/dependency-check
+  register: dependency_check_installed
+
+- name: Download Dependency-Check Binary
+  get_url:
+    url: https://github.com/jeremylong/DependencyCheck/releases/download/v{{dependency_check_version}}/dependency-check-{{dependency_check_version}}-release.zip
+    dest: /tmp/
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+  when: dependency_check_installed.stat.exists == false
+  register: download
+  until: download is success
+  retries: 5
+  delay: 2  
+
+- name: Extract Zip file To opt
+  unarchive:
+    src: /tmp/dependency-check-{{dependency_check_version}}-release.zip
+    dest: /opt/
+  become: yes
+  when: dependency_check_installed.stat.exists == false
+
+- name: Create a symbolic link for Dependency-Checker Binary
+  file:
+    src: /opt/dependency-check/bin/dependency-check.sh
+    dest: /usr/local/bin/dependency-check
+    mode: '0755'
+    state: link
+  become: yes
+  when: dependency_check_installed.stat.exists == false 
+
+- name: Recursively Apply Permissions for Jenkins user in the jenkins home folder
+  file:
+    path: /opt/dependency-check/
+    state: directory
+    mode: '0777'
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"    
+    recurse: yes
+  become: yes 
+
+
+- name: Run Depdendency-Check Update in Background
+  shell: "dependency-check --update"
+  register: dependency_check_update
+  retries: 5
+  until: dependency_check_update is not failed  
+
+- name: Recursively Apply Permissions for Jenkins user in the jenkins home folder
+  file:
+    path: /opt/dependency-check/
+    state: directory
+    mode: '0777'
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"    
+    recurse: yes
+  become: yes 

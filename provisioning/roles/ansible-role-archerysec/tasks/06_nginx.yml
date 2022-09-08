@@ -1,0 +1,9 @@
+##
+# Configure nginx web server
+##
+
+#- name: Write nginx conf file
+#  template: src=django_bootstrap.conf dest=/etc/nginx/conf.d/{{ project_name }}.conf
+#  become: yes
+#  notify:
+#    - restart nginx

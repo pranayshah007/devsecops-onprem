@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+
+depend() {
+    need net
+}
+
+command="/usr/bin/gem"
+command_args="mailcatcher --foreground --ip={{ mailcatcher_ip }} --smtp-ip={{ mailcatcher_smtp_ip }} --smtp-port={{ mailcatcher_smtp_port }} --http-ip={{ mailcatcher_http_ip }} --http-port={{ mailcatcher_http_port }} >> /var/log/mailcatcher.log 2>&1"
+command_user="mailcatcher:mailcatcher "
+pidfile="/run/${RC_SVCNAME}/pid"

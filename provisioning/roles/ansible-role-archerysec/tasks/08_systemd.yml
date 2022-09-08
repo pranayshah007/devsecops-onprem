@@ -1,0 +1,15 @@
+##
+# Set up systemd for executing gunicorn_start script
+##
+- name: Write a systemd service file
+  template:
+    src: archerysec.service
+    dest: /etc/systemd/system/archerysec.service
+    owner: root
+    group: root
+    mode: a+rx
+  become: yes
+  notify: 
+    - systemd_reload
+    - systemd_start
+    - systemd_enable

@@ -1,0 +1,6 @@
+- name: run docker theia IDE
+  command: docker-compose -f /home/vagrant/on-prem-lab/provisioning/ide/docker-compose.yml up --build -d
+  become: yes
+  ignore_errors: true
+  environment:
+    BHOST: "192.168.34.4"

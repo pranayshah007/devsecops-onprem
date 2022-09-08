@@ -1,0 +1,47 @@
+- name: check if filebeats configuration exists
+  stat:
+    path: "/etc/filebeat/filebeat.yml"
+  register: filebeat_check_configuration_file
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  become: yes
+  when: filebeat_check_configuration_file.stat.exists == false
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+  become: yes
+  when: filebeat_check_configuration_file.stat.exists == false
+
+- name: Install File beat and pre-requisites
+  package:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+      - apt-transport-https
+      - filebeat
+  register: get_result
+  until: get_result is success
+  retries: 3
+  delay: 2
+  become: yes          
+
+- name: Running filebeat modules
+  command: 'filebeat modules enable logstash nginx'
+  become: yes
+
+- name: Copy the config file
+  template:
+    src: filebeat.yml.j2
+    dest: "/etc/filebeat/filebeat.yml"
+    owner: root
+    group: root
+    mode: a+r
+  notify: Restart Filebeat
+  become: yes
+

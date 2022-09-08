@@ -1,0 +1,17 @@
+version: '3'
+services:
+  ide:
+      build: ./theia
+      container_name: theia_ide
+      volumes:
+        - /home/vagrant/on-prem-lab/:/home/project/on-prem-lab
+        - /home/vagrant/code:/home/project/code
+        - /usr/local/bin/trivy:/usr/local/bin/trivy
+        - /usr/local/bin/dependency-check:/usr/local/bin/dependency-check
+        - /var/run/docker.sock:/var/run/docker.sock
+        - /usr/bin/docker:/usr/bin/docker
+      ports:
+        - "3000:3000"
+      restart: always
+      extra_hosts:
+        - "devsecops:$BHOST"

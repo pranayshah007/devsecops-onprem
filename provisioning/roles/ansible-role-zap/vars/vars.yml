@@ -1,0 +1,13 @@
+---
+    zap_version: "2.9.0"
+    system_packages:
+        - jq
+        - unzip
+#       - python-pip Getting installed globally
+        - virtualenv
+        - wget
+        - apt-transport-https
+        - gnupg
+        - lsb-release
+        - openjdk-8-jdk
+        - nginx

@@ -1,0 +1,16 @@
+##
+# Configure the server for the Django app
+##
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "../vars/vars.yml"
+
+- include: 01_server.yml
+- include: 02_git.yml
+- include: create_user.yml
+- include: 03_postgres.yml
+- include: 04_dependencies.yml
+- include: 05_migrations.yml
+- include: 06_nginx.yml
+- include: 07_gunicorn.yml
+- include: 08_systemd.yml

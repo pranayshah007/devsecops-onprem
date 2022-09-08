@@ -1,0 +1,55 @@
+# - name: check if ZAP CLI is Installed
+#   stat: 
+#     path: /usr/local/bin/zap-cli
+#   register: zap_cli_installed
+
+# - name: Install ZAP Scanner cli
+#   command: pip install --upgrade zapcli
+#   become: yes
+#   when: zap_cli_installed.stat.exists == false
+
+# - name: Move zap-cli binary to bin folder
+#   file:
+#     src: /home/vagrant/.local/bin/zap-cli
+#     dest: /usr/local/bin/zap-cli
+#   become: yes
+#   when: zap_cli_installed.stat.exists == false
+
+- name: check if ZAP Scanner is Installed
+  stat: 
+    path: /zap
+  register: zap_installed
+
+- name: Download ZAP Scanner Shell Script
+  get_url:
+    url: https://github.com/zaproxy/zaproxy/releases/download/v2.9.0/ZAP_2.9.0_Linux.tar.gz
+    dest: /tmp/
+  when: zap_installed.stat.exists == false
+  register: download
+  until: download is success
+  retries: 5
+  delay: 2  
+
+- name: Create a directory for ZAP Scanner
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: "0777"
+  loop:
+    - /zap
+  become: yes
+  when: zap_installed.stat.exists == false  
+
+- name: Extract Zip file To zap folder
+  unarchive:
+    src: /tmp/ZAP_2.9.0_Linux.tar.gz
+    dest: /tmp/
+  become: yes
+  when: zap_installed.stat.exists == false
+
+- name: Copy zap files to zap folder
+  shell: mv /tmp/ZAP_2.9.0/* /zap
+  become: yes
+  when: zap_installed.stat.exists == false
+
+ 

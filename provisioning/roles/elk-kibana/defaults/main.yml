@@ -1,0 +1,19 @@
+---
+kibana_server: localhost
+kibana_server_port: 5601
+elasticsearch_server: "localhost:9200"
+elastalert_project_repo: "https://github.com/Yelp/elastalert.git"
+elastalert_install_root: "/opt/elastalert"
+e_venv_dir: "/opt/elastalert/envs"
+venv_python: '{{ e_venv_dir }}/bin/python3.6'
+postfix_config_file: "/etc/postfix/main.cf"
+postfix_service_state: "started"
+postfix_service_enabled: "true"
+postfix_inet_interfaces: "localhost"
+postfix_inet_protocols: "all"
+elastalert_elastic_server: localhost
+elastalert_elastic_port: 9200
+elastalert_mail: localhost
+elastalert_port: 1025
+index_name: logstash
+

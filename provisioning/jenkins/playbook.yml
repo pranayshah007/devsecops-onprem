@@ -1,0 +1,84 @@
+---
+- name: Install Jenkins
+# https://github.com/geerlingguy/ansible-role-java/issues/58
+  gather_facts: True
+  hosts: all
+  # To run locally
+  #hosts: localhost
+  #connection: local
+
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Install prerequisites
+      package:
+        name: "{{ item }}"
+        update_cache: yes
+        state: present
+      with_items:
+          - jq
+          - unzip
+          - virtualenv
+          - wget
+          - apt-transport-https
+          - gnupg
+          - lsb-release
+          - dos2unix
+      register: get_result
+      until: get_result is success
+      retries: 3
+      delay: 2
+      become: yes      
+
+    - import_tasks: jenkins.yml
+    - import_tasks: tools/dependency_checker.yml    
+    - import_tasks: tools/findsecbugs.yml     
+    - import_tasks: tools/trivy.yml
+    - import_tasks: tools/inspec.yml
+    - import_tasks: tools/scripts_permission.yml
+
+  roles:
+    - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.jenkins
+      become: yes
+      vars: 
+        # Jenkins 
+        # https://github.com/geerlingguy/ansible-role-jenkins/issues/269
+        jenkins_version: "2.249.1"
+        jenkins_admin_username: jenkins
+        jenkins_admin_password: jenkins
+        jenkins_http_port: 8080
+        jenkins_plugins_install_dependencies: yes
+        jenkins_package_state: present
+        jenkins_java_options: "-Djenkins.install.runSetupWizard=false"
+        # Jenkins plugins installation is failing. Hence below mentioned plugins need to be installed manually before packaging the box or ami        
+        # jenkins_plugins:
+        #   - git # Installs Credentials and SSH credentials plugins
+        #   - ws-cleanup
+        #   - timestamper
+        #   - credentials-binding
+        #   - ansicolor
+        #   - workflow-aggregator
+        #   - email-ext
+        #   - blueocean
+        #   - mailer
+      
+    - role: /home/vagrant/on-prem-lab/provisioning/roles/ansible-role-maven
+    - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.docker
+      become: yes
+      vars:
+        docker_users: ["{{ jenkins_process_user }}","vagrant"]
+        docker_install_compose: true
+    - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.pip
+      become: yes
+      vars:
+        pip_package: python3-pip
+        pip_install_packages:
+        - name: docker-py          
+        - name: archerysec-cli
+        - name: mechanize
+        - name: zapcli
+        - name: openvas_lib
+        - name: semgrep
+          version: 0.29.0      
+    - role: /home/vagrant/on-prem-lab/provisioning/roles/ansible-role-maven

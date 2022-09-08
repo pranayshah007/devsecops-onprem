@@ -1,0 +1,89 @@
+- include_vars: "{{ item }}"
+  with_first_found:
+    - "../vars/vars.yml"
+
+- name: Install system packages
+  apt: pkg='{{ system_packages }}' update-cache=yes
+
+# - import_tasks: ../jenkins/tools/zap_scanner.yml
+
+- name: check if ZAP Scanner is Installed
+  stat:
+    path: /zap/zap.sh
+  register: zap_installed
+
+- name: Download ZAP Scanner Shell Script
+  get_url:
+    url: https://github.com/zaproxy/zaproxy/releases/download/v{{ zap_version }}/ZAP_{{ zap_version }}_Linux.tar.gz
+    # url: https://github.com/zaproxy/zaproxy/releases/download/v2.9.0/ZAP_2.9.0_Linux.tar.gz
+    dest: /tmp/
+  when: zap_installed.stat.exists == false
+  register: download
+  until: download is success
+  retries: 5
+  delay: 2
+
+- name: Create a directory for ZAP Scanner
+  file:
+    state: directory
+    path: "{{ item }}"
+    mode: "0777"
+  loop:
+    - /zap
+  become: yes
+  when: zap_installed.stat.exists == false
+
+- name: Extract Zip file To zap folder
+  unarchive:
+    src: /tmp/ZAP_{{ zap_version }}_Linux.tar.gz
+    # src: /tmp/ZAP_2.9.0_Linux.tar.gz
+    dest: /tmp/
+  become: yes
+  when: zap_installed.stat.exists == false
+
+- name: Copy zap files to zap folder
+  shell: mv /tmp/ZAP_{{ zap_version }}/* /zap
+  # shell: mv /tmp/ZAP_2.9.0/* /zap
+  become: yes
+  when: zap_installed.stat.exists == false
+
+- name: Recursively Apply Permissions for Jenkins user in the scripts home folder
+  file:
+    path: /zap
+    state: directory
+    mode: "0777"
+    owner: "root"
+    group: "root"
+    recurse: yes
+  become: yes
+
+- name: Copy run script
+  template:
+    src: run.sh
+    dest: /zap/run.sh
+    owner: "root"
+    group: "root"
+    mode: "0777"
+  become: yes
+
+##
+# Set up systemd start script
+##
+- name: Write a systemd service file
+  template:
+    src: zap.service
+    dest: /etc/systemd/system/zap.service
+    owner: root
+    group: root
+    mode: a+rx
+  become: yes
+  notify:
+    - systemd_reload
+    - systemd_start
+    - systemd_enable
+
+## Adding this to restart zap.service
+- name: Make sure a service unit is running
+  ansible.builtin.systemd:
+    state: started
+    name: zap

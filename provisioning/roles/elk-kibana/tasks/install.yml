@@ -1,0 +1,131 @@
+- name: check if kibana configuration exists
+  stat:
+    path: "/etc/kibana/kibana.yml"
+  register: kibana_check_configuration_file
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_key:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  when: kibana_check_configuration_file.stat.exists == false
+
+- name: Add an Apt signing key, uses whichever key is at the URL
+  apt_repository:
+    repo: deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    state: present
+  become: yes
+  when: kibana_check_configuration_file.stat.exists == false
+
+- name: Install Kibana and pre-requisites
+  package:
+    name: "{{ item }}"
+    update_cache: yes
+    state: present
+  with_items:
+      - apt-transport-https
+      - kibana
+      - virtualenv
+#     - python3-pip
+      - libffi-dev
+      - libssl-dev
+      - postfix
+      - mailutils
+      - libsasl2-2
+      - ca-certificates
+      - libsasl2-modules
+  register: get_result
+  until: get_result is success
+  retries: 3
+  delay: 2          
+
+- name: Copy the config file
+  template:
+    src: kibana.yml.j2
+    dest: "/etc/kibana/kibana.yml"
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+  notify: Restart Kibana
+
+- name: Create a virtualenv directory
+  file:
+    path: "{{ e_venv_dir }}"
+    state: directory
+
+- name: Install elastalert pip dependencies
+  pip:
+    name: "elastalert"
+    virtualenv: "{{ e_venv_dir }}"
+    virtualenv_python: python3.6
+
+- name: Copy elastalert service file
+  template:
+    src: elastalert.service.j2
+    dest: "/etc/systemd/system/elastalert.service"
+    owner: root
+    group: root
+    mode: a+rx
+  become: yes
+  notify: Reload systemd
+
+- name: Copy elastalert config file
+  template:
+    src: elastalert.conf.j2
+    dest: "/opt/elastalert/elastalert.conf"
+    owner: root
+    group: root
+    mode: a+rx
+  become: yes    
+  notify: Restart Kibana
+
+- name: Copy elastalert example_frequency file
+  template:
+    src: example_frequency.yaml.j2
+    dest: "/opt/elastalert/example_frequency.yaml"
+    owner: root
+    group: root
+    mode: a+r
+  become: yes
+
+- name: Update Postfix configuration.
+  lineinfile:
+    dest: "{{ postfix_config_file }}"
+    line: "{{ item.name }} = {{ item.value }}"
+    regexp: "^{{ item.name }} ="
+  with_items:
+    - name: inet_interfaces
+      value: "{{ postfix_inet_interfaces }}"
+    - name: inet_protocols
+      value: "{{ postfix_inet_protocols }}"
+  notify: restart postfix
+
+- name: Ensure postfix is started and enabled at boot.
+  service:
+    name: postfix
+    state: "{{ postfix_service_state }}"
+    enabled: "{{ postfix_service_enabled }}"
+
+- name: Copy email config file
+  template:
+    src: email.config.j2
+    dest: "/etc/postfix/main.cf"
+  notify: restart postfix
+  become: yes
+
+- name: stop elasticsearch
+  command: systemctl stop elasticsearch.service
+  become: yes
+
+- name: start elasticsearch
+  command: systemctl start elasticsearch.service
+  become: yes
+
+- name: Wait for port 9200 to become open on the host, don't start checking for 10 seconds
+  wait_for:
+    port: 9200
+    delay: 10
+
+- name: install elastalert-create-index
+  command: /opt/elastalert/envs/bin/elastalert-create-index --config /opt/elastalert/elastalert.conf
+  notify: Restart elastalert

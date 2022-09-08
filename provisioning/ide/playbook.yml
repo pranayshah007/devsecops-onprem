@@ -1,0 +1,23 @@
+---
+- name: Install Docker for Creating The Production Environment
+  gather_facts: True
+  hosts: all
+  become: yes
+
+  vars:
+    docker_insecure_registry_domain: "ide.local:3000"
+
+  tasks:
+    - import_tasks: ide-setup.yml
+
+#  roles:
+#    - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.docker
+#      become: yes
+#      vars:
+#        docker_users: [ubuntu]
+#        docker_install_compose: true
+#    - role: /home/vagrant/on-prem-lab/provisioning/roles/geerlingguy.pip
+#      become: yes
+#      vars:
+#        pip_install_packages:
+#        - name: docker-py

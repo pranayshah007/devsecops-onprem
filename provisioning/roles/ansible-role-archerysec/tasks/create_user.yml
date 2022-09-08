@@ -1,0 +1,6 @@
+---
+    - name: Create archerysec group
+      group: name=archerysec
+    
+    - name: Create archerysec user
+      user: name=archerysec shell=/bin/bash comment="archerysec" group=archerysec    

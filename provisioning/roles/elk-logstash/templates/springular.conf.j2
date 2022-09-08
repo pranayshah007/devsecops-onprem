@@ -1,0 +1,59 @@
+input
+{
+    beats
+    {
+        ssl => false
+        port => 5000
+        codec => "json"
+    }
+}
+filter {
+    grok {
+        match => { "message" => "(?<timestamp>%{YEAR}[./]%{MONTHNUM}[./]%{MONTHDAY} %{TIME}) \[%{LOGLEVEL:severity}\] %{POSINT:pid}#%{NUMBER:threadid}\: \*%{NUMBER:connectionid} %{GREEDYDATA:attack}, client: %{IP:client}, server: %{GREEDYDATA:server}"}
+
+        remove_field => ["message"]
+  }
+
+    grok {
+        match => {"attack" => "(?<attack_file>\[file \".+\/(.*?).conf\"\])"}
+  }
+  grok {
+        match => {"attack_file" => "(?<attack_name>[A-Z][^.]+)"}
+        remove_field => ["attack_file"]
+  }
+    grok {
+        match => {"attack" => "(?<attack_message>\[msg \"(.*?)\"\])"}
+    }
+    grok {
+        match => {"attack" => "(?<attack_data>\[data \"(.*?)\"\])"}
+    }
+    grok {
+        match => {"attack" => "(?<attack_uri>\[uri \"(.*?)\"\])"}
+        remove_field => ["attack"]
+    }
+    grok {
+        match => {"attack_uri" => "(?<attack_url>[/].+\")"}
+    }
+
+    if [message] =~ "\A\{.+\}\z" {
+        json {
+          source => "message"
+          target => "httpRequest"
+        }
+        mutate {
+          remove_field => [ "json", "message" ]
+        }
+    }
+    mutate {
+          remove_field => [ "json", "agent" ]
+          remove_field => [ "json", "tags" ]
+          remove_field => [ "json", "thread_name" ]
+    }
+}
+output {
+    elasticsearch {
+      hosts => ["{{elasticsearch_server}}"]
+      manage_template => false
+      index => "logstash-%{+YYYY.MM.dd}"
+   }
+}
